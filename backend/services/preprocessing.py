@@ -41,6 +41,15 @@ def preprocess_sonar_image(image_bytes: bytes, already_preprocessed: bool = Fals
     if img is None:
         return image_bytes
 
+    # Scale max dimension to 640px to prevent high-resolution RAM allocation and OOM crashes on Render
+    h, w = img.shape[:2]
+    MAX_DIM = 640
+    if max(h, w) > MAX_DIM:
+        scale = MAX_DIM / max(h, w)
+        new_w = max(1, int(w * scale))
+        new_h = max(1, int(h * scale))
+        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
     # Convert to Grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
