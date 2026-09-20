@@ -77,9 +77,9 @@ export default function Analyze() {
     if (isProcessing) return;
     setErrorMsg(null);
     setIsProcessing(true);
-    setCurrentStep(1); // Preprocess
+    setCurrentStep(1); // Preprocess active
 
-    let timer2, timer3, timer4;
+    let timer2, timer3;
 
     try {
       const formData = new FormData();
@@ -97,23 +97,21 @@ export default function Analyze() {
       formData.append('confidence_threshold', confidenceThreshold.toString());
       formData.append('already_preprocessed', alreadyPreprocessed ? 'true' : 'false');
 
-      // Trigger single backend request
+      // Trigger backend request
       const createPromise = createSurvey(formData);
 
-      // Smooth step transitions while backend completes request
-      timer2 = setTimeout(() => setCurrentStep(2), 350); // Detect
-      timer3 = setTimeout(() => setCurrentStep(3), 750); // Filter
-      timer4 = setTimeout(() => setCurrentStep(4), 1150); // Geo-tag
+      // Smooth step transitions while backend processes
+      timer2 = setTimeout(() => setCurrentStep(2), 300); // Detect
+      timer3 = setTimeout(() => setCurrentStep(3), 650); // Filter / Geo-tag processing
 
+      // Wait for backend to complete full pipeline
       const result = await createPromise;
 
       clearTimeout(timer2);
       clearTimeout(timer3);
-      clearTimeout(timer4);
 
-      setCurrentStep(4); // Geo-tag completed
-      await new Promise(r => setTimeout(r, 200));
-      setCurrentStep(5); // Complete
+      // All pipeline steps complete - set step to 5 so all 4 steps show green checkmarks!
+      setCurrentStep(5);
       setIsProcessing(false);
 
       setTimeout(() => {
@@ -123,7 +121,6 @@ export default function Analyze() {
     } catch (err) {
       clearTimeout(timer2);
       clearTimeout(timer3);
-      clearTimeout(timer4);
       console.error("Survey creation error:", err);
       setErrorMsg("Failed to process survey imagery. Please check file format and connection.");
       setIsProcessing(false);
