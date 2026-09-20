@@ -74,9 +74,12 @@ export default function Analyze() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isProcessing) return;
     setErrorMsg(null);
     setIsProcessing(true);
     setCurrentStep(1); // Preprocess
+
+    let timer2, timer3, timer4;
 
     try {
       const formData = new FormData();
@@ -94,29 +97,35 @@ export default function Analyze() {
       formData.append('confidence_threshold', confidenceThreshold.toString());
       formData.append('already_preprocessed', alreadyPreprocessed ? 'true' : 'false');
 
-      // Trigger backend analysis
+      // Trigger single backend request
       const createPromise = createSurvey(formData);
 
-      await new Promise(r => setTimeout(r, 300));
-      setCurrentStep(2); // Detect
-
-      await new Promise(r => setTimeout(r, 400));
-      setCurrentStep(3); // Filter
+      // Smooth step transitions while backend completes request
+      timer2 = setTimeout(() => setCurrentStep(2), 350); // Detect
+      timer3 = setTimeout(() => setCurrentStep(3), 750); // Filter
+      timer4 = setTimeout(() => setCurrentStep(4), 1150); // Geo-tag
 
       const result = await createPromise;
 
-      setCurrentStep(4); // Geo-tag
-      await new Promise(r => setTimeout(r, 300));
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+
+      setCurrentStep(4); // Geo-tag completed
+      await new Promise(r => setTimeout(r, 200));
       setCurrentStep(5); // Complete
       setIsProcessing(false);
 
       setTimeout(() => {
         navigate(`/surveys/${result.id}`);
-      }, 500);
+      }, 400);
 
     } catch (err) {
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
       console.error("Survey creation error:", err);
-      setErrorMsg("Failed to process survey imagery. Please check file format.");
+      setErrorMsg("Failed to process survey imagery. Please check file format and connection.");
       setIsProcessing(false);
       setCurrentStep(0);
     }

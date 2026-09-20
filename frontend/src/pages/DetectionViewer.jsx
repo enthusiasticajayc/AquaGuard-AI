@@ -20,12 +20,17 @@ export default function DetectionViewer() {
   useEffect(() => {
     async function loadSurvey() {
       setLoading(true);
-      const data = await fetchSurveyById(id || "surv-mumbai-001");
-      setSurvey(data);
-      if (data?.detections?.length > 0) {
-        setSelectedDetectionId(data.detections[0].id);
+      try {
+        const data = await fetchSurveyById(id || "surv-mumbai-001");
+        setSurvey(data);
+        if (data?.detections?.length > 0) {
+          setSelectedDetectionId(data.detections[0].id);
+        }
+      } catch (err) {
+        console.warn("Error loading survey details:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadSurvey();
   }, [id]);

@@ -25,10 +25,20 @@ export default function VerificationQueue() {
 
   async function loadQueue() {
     setLoading(true);
-    const data = await fetchDetections({ status: 'all' });
-    const sorted = [...data].sort((a, b) => b.risk_score - a.risk_score);
-    setDetections(sorted);
-    setLoading(false);
+    try {
+      const data = await fetchDetections({ status: 'all' });
+      if (Array.isArray(data)) {
+        const sorted = [...data].sort((a, b) => b.risk_score - a.risk_score);
+        setDetections(sorted);
+      } else {
+        setDetections([]);
+      }
+    } catch (err) {
+      console.warn("Error loading verification queue:", err);
+      setDetections([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
