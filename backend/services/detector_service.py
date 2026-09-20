@@ -135,8 +135,8 @@ class YoloDetector(DetectorService):
 
         img_h, img_w = processed_bgr.shape[:2]
         
-        # Scale max dimension to 1280px to cap max tile count for fast CPU inference while preserving accuracy
-        MAX_DIM = 1280
+        # Scale max dimension to 640px to match YOLO model training resolution for single-pass ~50ms CPU inference
+        MAX_DIM = 640
         if max(img_h, img_w) > MAX_DIM:
             scale = MAX_DIM / max(img_h, img_w)
             new_w = max(1, int(img_w * scale))
