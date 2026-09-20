@@ -75,15 +75,13 @@ async def create_survey(
     t_model_load = time.perf_counter() - t_model_start
 
     # Execute AI Detections
-    t_infer_start = time.perf_counter()
-    detected_items = detector.detect(
+    detected_items, timings = detector.detect(
         image_bytes=image_bytes,
         confidence_threshold=confidence_threshold,
         start_lat=start_lat or 18.9220,
         start_lon=start_lon or 72.8347,
         preprocessed_bytes=preprocessed_bytes
     )
-    t_infer = time.perf_counter() - t_infer_start
     
     # Save survey & detections to database
     t_db_start = time.perf_counter()
@@ -122,13 +120,13 @@ async def create_survey(
 
     t_total = time.perf_counter() - t_start
 
-    print(f"[PROCESS] Upload: {t_upload:.3f} sec")
-    print(f"[PROCESS] Preprocessing: {t_prep:.3f} sec")
-    print(f"[PROCESS] YOLO model load: {t_model_load:.3f} sec")
-    print(f"[PROCESS] YOLO inference: {t_infer:.3f} sec")
-    print(f"[PROCESS] Verification: 0.001 sec")
-    print(f"[PROCESS] Geo conversion: 0.001 sec")
-    print(f"[PROCESS] Database: {t_db:.3f} sec")
-    print(f"[PROCESS] TOTAL: {t_total:.3f} sec")
+    print(f"[PROCESS] Upload: {t_upload:.4f} sec")
+    print(f"[PROCESS] Preprocessing: {t_prep:.4f} sec")
+    print(f"[PROCESS] Detector initialization: {t_model_load:.4f} sec")
+    print(f"[PROCESS] YOLO inference: {timings['t_infer']:.4f} sec")
+    print(f"[PROCESS] Verification: {timings['t_verify']:.4f} sec")
+    print(f"[PROCESS] Geo conversion: {timings['t_geo']:.4f} sec")
+    print(f"[PROCESS] Database: {t_db:.4f} sec")
+    print(f"[PROCESS] TOTAL: {t_total:.4f} sec")
 
     return db_survey

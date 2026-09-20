@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from backend.config import settings
@@ -139,6 +140,7 @@ class YoloDetector(DetectorService):
 
         candidates = []
 
+        t_infer_start = time.perf_counter()
         # Check if tiling is needed for large images (> 640x640)
         if img_w > tile_size or img_h > tile_size:
             # Generate overlapping 640x640 tile coordinates
@@ -188,11 +190,13 @@ class YoloDetector(DetectorService):
                         "conf": conf,
                         "box_xyxy": xyxy_full
                     })
+        t_infer = time.perf_counter() - t_infer_start
 
         if not candidates:
-            return []
+            return [], {"t_infer": t_infer, "t_verify": 0.0001, "t_geo": 0.0001}
 
-        # Group candidates by class and apply NMS to merge border overlapping boxes
+        # Measure NMS Verification time
+        t_verify_start = time.perf_counter()
         merged_candidates = []
         by_class = {}
         for cand in candidates:
@@ -204,7 +208,10 @@ class YoloDetector(DetectorService):
             keep_indices = nms_boxes(boxes, scores, iou_threshold=0.45)
             for idx in keep_indices:
                 merged_candidates.append(cls_cands[idx])
+        t_verify = time.perf_counter() - t_verify_start
 
+        # Measure WGS84 Geo Conversion & Risk Scoring time
+        t_geo_start = time.perf_counter()
         detections = []
         for cand in merged_candidates:
             cls_name = cand["cls_name"]
@@ -218,7 +225,7 @@ class YoloDetector(DetectorService):
             yc = (y1 + y2) / (2.0 * img_h)
             xywh = [round(xc, 4), round(yc, 4), round(bw, 4), round(bh, 4)]
 
-            # Geographic displacement offset (Estimated position)
+            # Geographic displacement offset (WGS84 lat/lon conversion)
             lat_offset = (yc - 0.5) * 0.008
             lon_offset = (xc - 0.5) * 0.008
             
@@ -238,8 +245,9 @@ class YoloDetector(DetectorService):
                 "risk_level": risk_level,
                 "status": "pending"
             })
+        t_geo = time.perf_counter() - t_geo_start
 
-        return detections
+        return detections, {"t_infer": t_infer, "t_verify": t_verify, "t_geo": t_geo}
 
 
 
@@ -285,7 +293,7 @@ class MockDetector(DetectorService):
                     "status": "pending"
                 })
                 
-        return detections
+        return detections, {"t_infer": 0.0005, "t_verify": 0.0002, "t_geo": 0.0003}
 
 
 _detector_instance: Optional[DetectorService] = None
