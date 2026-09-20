@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: aquaguard_db
+    restart: always
+    environment:
+      POSTGRES_DB: aquaguard_db
+      POSTGRES_USER: aquaguard
+      POSTGRES_PASSWORD: aquaguard123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aquaguard_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://aquaguard:aquaguard123@db:5432/aquaguard_db
+      - DETECTOR_MODE=auto
+      - YOLO_MODEL_PATH=backend/models_weights/best.pt
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aquaguard_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

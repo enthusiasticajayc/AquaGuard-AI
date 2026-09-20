@@ -1,0 +1,33 @@
+{
+  "precision": 0.92,
+  "recall": 0.901,
+  "map50": 0.924,
+  "map50_95": 0.865,
+  "f1_score": 0.91,
+  "mode": "yolov11_validated",
+  "images_evaluated": 420,
+  "total_objects": 474,
+  "class_breakdown": {
+    "ghost_net_fishing_gear": {
+      "precision": 0.928,
+      "recall": 0.91,
+      "map50": 0.931
+    },
+    "shipwreck": {
+      "precision": 0.951,
+      "recall": 0.933,
+      "map50": 0.948
+    },
+    "debris_object": {
+      "precision": 0.906,
+      "recall": 0.885,
+      "map50": 0.908
+    },
+    "anomaly": {
+      "precision": 0.889,
+      "recall": 0.867,
+      "map50": 0.909
+    }
+  },
+  "evaluated_at": "2026-09-20 12:55:44"
+}

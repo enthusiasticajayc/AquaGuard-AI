@@ -1,0 +1,16 @@
+{
+  "dataset_name": "DRISHTI-SSS Side-Scan Sonar Benchmark",
+  "total_tiles": 5205,
+  "splits": {
+    "train": { "images": 3875, "labels": 3875, "background_tiles": 500, "total_boxes": 4297 },
+    "val": { "images": 630, "labels": 630, "background_tiles": 70, "total_boxes": 904 },
+    "test": { "images": 700, "labels": 700, "background_tiles": 70, "total_boxes": 901 }
+  },
+  "tile_size": "640x640 tile standard",
+  "classes": {
+    "mine_cylinder": { "id": 4, "label": "Mine-like object (unverified)", "train": 843, "val": 93, "test": 82, "total": 1018 },
+    "ghost_net": { "id": 3, "label": "Ghost Fishing Net", "train": 900, "val": 120, "test": 120, "total": 1140 },
+    "shipwreck": { "id": 2, "label": "Submerged Shipwreck", "train": 1554, "val": 544, "test": 525, "total": 2623 },
+    "submarine_pipeline": { "id": 1, "label": "Submarine Pipeline", "train": 1000, "val": 147, "test": 174, "total": 1321 }
+  }
+}

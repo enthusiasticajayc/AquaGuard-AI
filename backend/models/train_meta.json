@@ -1,0 +1,10 @@
+{
+  "profile": "CPU-lite",
+  "model_name": "yolo11n",
+  "imgsz": 416,
+  "epochs": 12,
+  "fraction": 1.0,
+  "device": "cpu",
+  "batch": 8,
+  "training_date": "2026-09-20 18:23:57"
+}

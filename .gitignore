@@ -1,0 +1,30 @@
+# Node & Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.log
+
+# Python & Backend
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.db
+aquaguard.db
+uploads/*.jpg
+!uploads/.gitkeep
+
+# Environment
+.env
+.env.local
+
+# ML Datasets & Training Runs
+datasets/
+backend/ml/runs/
+*.cache
+
+# Keep model weights & evaluation metrics tracked if present
+!backend/models/best.pt
+!backend/models/metrics.json
+!datasets/drishti-sss/data.yaml
