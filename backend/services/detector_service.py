@@ -1,13 +1,13 @@
 import os
 import random
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from backend.config import settings
 from backend.services.risk_service import calculate_risk
 
 class DetectorService(ABC):
     @abstractmethod
-    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float) -> List[Dict[str, Any]]:
+    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float, preprocessed_bytes: Optional[bytes] = None) -> List[Dict[str, Any]]:
         """Abstract method for object detection on sonar imagery."""
         pass
         
@@ -108,7 +108,7 @@ class YoloDetector(DetectorService):
     def is_mock(self) -> bool:
         return False
 
-    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float) -> List[Dict[str, Any]]:
+    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float, preprocessed_bytes: Optional[bytes] = None) -> List[Dict[str, Any]]:
         if not self._model:
             raise RuntimeError("YOLO model is not initialized")
             
@@ -122,9 +122,11 @@ class YoloDetector(DetectorService):
         if img is None:
             return []
 
-        # 2. Shared Preprocessing (Lee Filter + OpenCV CLAHE)
-        from backend.services.preprocessing import preprocess_sonar_image
-        preprocessed_bytes = preprocess_sonar_image(image_bytes, already_preprocessed=False)
+        # 2. Shared Preprocessing (reuse preprocessed_bytes if already computed)
+        if preprocessed_bytes is None:
+            from backend.services.preprocessing import preprocess_sonar_image
+            preprocessed_bytes = preprocess_sonar_image(image_bytes, already_preprocessed=False)
+
         prep_nparr = np.frombuffer(preprocessed_bytes, np.uint8)
         processed_bgr = cv2.imdecode(prep_nparr, cv2.IMREAD_COLOR)
         if processed_bgr is None:
@@ -247,7 +249,7 @@ class MockDetector(DetectorService):
     def is_mock(self) -> bool:
         return True
 
-    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float) -> List[Dict[str, Any]]:
+    def detect(self, image_bytes: bytes, confidence_threshold: float, start_lat: float, start_lon: float, preprocessed_bytes: Optional[bytes] = None) -> List[Dict[str, Any]]:
         """
         Deterministic mock detector producing high-fidelity realistic sonar debris detections
         geo-tagged around the survey's starting position.
@@ -286,22 +288,22 @@ class MockDetector(DetectorService):
         return detections
 
 
+_detector_instance: Optional[DetectorService] = None
+
 def get_detector() -> DetectorService:
+    global _detector_instance
+    if _detector_instance is not None:
+        return _detector_instance
+
     mode = settings.DETECTOR_MODE.lower()
     weights_path = settings.YOLO_MODEL_PATH
     
-    if mode == "yolo":
-        if os.path.exists(weights_path):
-            return YoloDetector(weights_path)
-        else:
-            print(f"[DetectorService] Warning: DETECTOR_MODE=yolo but weights file '{weights_path}' not found. Falling back to MockDetector.")
-            return MockDetector()
-    elif mode == "auto":
-        if os.path.exists(weights_path):
-            print(f"[DetectorService] Found weights file at {weights_path}. Using YoloDetector.")
-            return YoloDetector(weights_path)
-        else:
-            print(f"[DetectorService] No YOLO weights file found at {weights_path}. Operating in MockDetector (Demo Mode).")
-            return MockDetector()
+    if mode in ("yolo", "auto") and os.path.exists(weights_path):
+        print(f"[DetectorService] Initializing single-instance YoloDetector ({weights_path})...")
+        _detector_instance = YoloDetector(weights_path)
     else:
-        return MockDetector()
+        if mode in ("yolo", "auto"):
+            print(f"[DetectorService] No weights found at '{weights_path}'. Operating in MockDetector mode.")
+        _detector_instance = MockDetector()
+        
+    return _detector_instance

@@ -76,15 +76,7 @@ export default function Analyze() {
     e.preventDefault();
     setErrorMsg(null);
     setIsProcessing(true);
-    setCurrentStep(1);
-
-    await new Promise(r => setTimeout(r, 600));
-    setCurrentStep(2);
-    await new Promise(r => setTimeout(r, 800));
-    setCurrentStep(3);
-    await new Promise(r => setTimeout(r, 600));
-    setCurrentStep(4);
-    await new Promise(r => setTimeout(r, 600));
+    setCurrentStep(1); // Preprocess
 
     try {
       const formData = new FormData();
@@ -102,18 +94,31 @@ export default function Analyze() {
       formData.append('confidence_threshold', confidenceThreshold.toString());
       formData.append('already_preprocessed', alreadyPreprocessed ? 'true' : 'false');
 
-      const result = await createSurvey(formData);
-      setCurrentStep(5);
+      // Trigger backend analysis
+      const createPromise = createSurvey(formData);
+
+      await new Promise(r => setTimeout(r, 300));
+      setCurrentStep(2); // Detect
+
+      await new Promise(r => setTimeout(r, 400));
+      setCurrentStep(3); // Filter
+
+      const result = await createPromise;
+
+      setCurrentStep(4); // Geo-tag
+      await new Promise(r => setTimeout(r, 300));
+      setCurrentStep(5); // Complete
       setIsProcessing(false);
 
       setTimeout(() => {
         navigate(`/surveys/${result.id}`);
-      }, 700);
+      }, 500);
 
     } catch (err) {
       console.error("Survey creation error:", err);
       setErrorMsg("Failed to process survey imagery. Please check file format.");
       setIsProcessing(false);
+      setCurrentStep(0);
     }
   };
 

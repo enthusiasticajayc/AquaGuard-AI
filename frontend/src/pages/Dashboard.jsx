@@ -28,13 +28,22 @@ export default function Dashboard({ onStartDemo }) {
 
   async function loadData() {
     setLoading(true);
-    const sData = await fetchStats();
-    const detData = await fetchDetections({ min_confidence: 0.0 });
-    const mData = await fetchResearchMetrics();
-    setStats(sData);
-    setMetrics(mData);
-    setRecentDetections(detData.slice(0, 5));
-    setLoading(false);
+    try {
+      const sData = await fetchStats();
+      const detData = await fetchDetections({ min_confidence: 0.0 });
+      const mData = await fetchResearchMetrics();
+      setStats(sData);
+      setMetrics(mData);
+      if (Array.isArray(detData)) {
+        setRecentDetections(detData.slice(0, 5));
+      } else {
+        setRecentDetections([]);
+      }
+    } catch (err) {
+      console.warn("Error loading dashboard data:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
