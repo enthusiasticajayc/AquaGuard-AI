@@ -29,9 +29,11 @@ export default function Dashboard({ onStartDemo }) {
   async function loadData() {
     setLoading(true);
     try {
-      const sData = await fetchStats();
-      const detData = await fetchDetections({ min_confidence: 0.0 });
-      const mData = await fetchResearchMetrics();
+      const [sData, detData, mData] = await Promise.all([
+        fetchStats(),
+        fetchDetections({ min_confidence: 0.0 }),
+        fetchResearchMetrics()
+      ]);
       setStats(sData);
       setMetrics(mData);
       if (Array.isArray(detData)) {

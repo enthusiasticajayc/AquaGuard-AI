@@ -12,7 +12,7 @@ import GISMap from './pages/GISMap';
 import VerificationQueue from './pages/VerificationQueue';
 import Reports from './pages/Reports';
 import Research from './pages/Research';
-import { fetchStats } from './services/api';
+import { fetchStats, warmupBackend } from './services/api';
 
 function AppContent() {
   const location = useLocation();
@@ -30,6 +30,8 @@ function AppContent() {
   }, [isDarkMode]);
 
   useEffect(() => {
+    // Trigger background warm-up ping for Render backend container
+    warmupBackend();
     async function loadStats() {
       const data = await fetchStats();
       setStats(data);

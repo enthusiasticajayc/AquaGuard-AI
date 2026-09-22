@@ -116,22 +116,17 @@ class YoloDetector(DetectorService):
         import cv2
         import numpy as np
         
-        # 1. Decode image bytes
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        if img is None:
-            return []
-
-        # 2. Shared Preprocessing (reuse preprocessed_bytes if already computed)
-        if preprocessed_bytes is None:
-            from backend.services.preprocessing import preprocess_sonar_image
-            preprocessed_bytes = preprocess_sonar_image(image_bytes, already_preprocessed=False)
-
-        prep_nparr = np.frombuffer(preprocessed_bytes, np.uint8)
+        # 1. Shared Preprocessing / Decoding (reuse preprocessed_bytes if already computed)
+        target_bytes = preprocessed_bytes if preprocessed_bytes is not None else image_bytes
+        prep_nparr = np.frombuffer(target_bytes, np.uint8)
         processed_bgr = cv2.imdecode(prep_nparr, cv2.IMREAD_COLOR)
+        
+        if processed_bgr is None and preprocessed_bytes is not None:
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            processed_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
         if processed_bgr is None:
-            processed_bgr = img
+            return [], {"t_infer": 0.0001, "t_verify": 0.0001, "t_geo": 0.0001}
 
         img_h, img_w = processed_bgr.shape[:2]
         

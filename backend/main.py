@@ -51,8 +51,17 @@ def startup_event():
         print(f"[Main] Startup DB check warning: {e}")
     finally:
         db.close()
+        
+    # Pre-warm YOLO detector model in memory to prevent request latency
+    try:
+        from backend.services.detector_service import get_detector
+        print("[Main] Pre-warming detector service model...")
+        get_detector()
+    except Exception as e:
+        print(f"[Main] Detector pre-warm warning: {e}")
 
 @app.get("/")
+@app.get("/api/health")
 def root():
     return {
         "title": settings.PROJECT_NAME,
@@ -61,3 +70,4 @@ def root():
         "docs": "/docs",
         "detector_mode": settings.DETECTOR_MODE
     }
+

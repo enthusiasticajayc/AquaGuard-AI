@@ -2,9 +2,33 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://aquaguard-ai-5i6d.onrender.com/api";
 
+export async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+export function warmupBackend() {
+  try {
+    fetchWithTimeout(`${API_BASE_URL}/health`, { method: "GET" }, 15000).catch(() => {});
+  } catch (err) {
+    // Silent warmup catch
+  }
+}
+
 export async function fetchStats() {
   try {
-    const res = await fetch(`${API_BASE_URL}/stats`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/stats`, {}, 8000);
     if (!res.ok) throw new Error("Failed to fetch stats");
     return await res.json();
   } catch (err) {
@@ -35,7 +59,7 @@ export async function fetchStats() {
 
 export async function fetchSurveys() {
   try {
-    const res = await fetch(`${API_BASE_URL}/surveys`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/surveys`, {}, 8000);
     if (!res.ok) throw new Error("Failed to fetch surveys");
     return await res.json();
   } catch (err) {
@@ -80,7 +104,7 @@ export async function fetchSurveys() {
 
 export async function fetchSurveyById(id) {
   try {
-    const res = await fetch(`${API_BASE_URL}/surveys/${id}`);
+    const res = await fetchWithTimeout(`${API_BASE_URL}/surveys/${id}`, {}, 8000);
     if (!res.ok) throw new Error("Failed to fetch survey");
     return await res.json();
   } catch (err) {
@@ -94,10 +118,10 @@ export async function fetchSurveyById(id) {
 
 export async function createSurvey(formData) {
   try {
-    const res = await fetch(`${API_BASE_URL}/surveys`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/surveys`, {
       method: "POST",
       body: formData,
-    });
+    }, 25000);
 
     if (!res.ok) throw new Error("Failed to create survey");
     return await res.json();
@@ -206,8 +230,10 @@ export async function fetchDetections(filters = {}) {
         filters.min_confidence
       );
 
-    const res = await fetch(
-      `${API_BASE_URL}/detections?${query.toString()}`
+    const res = await fetchWithTimeout(
+      `${API_BASE_URL}/detections?${query.toString()}`,
+      {},
+      8000
     );
 
     if (!res.ok)
@@ -353,7 +379,7 @@ export async function verifyDetection(
   note = ""
 ) {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `${API_BASE_URL}/detections/${detectionId}/verify`,
       {
         method: "PATCH",
@@ -365,7 +391,8 @@ export async function verifyDetection(
           new_class: newClass,
           note
         })
-      }
+      },
+      10000
     );
 
     if (!res.ok)
@@ -419,8 +446,10 @@ export function getImageUrl(path) {
 
 export async function fetchResearchMetrics() {
   try {
-    const res = await fetch(
-      `${API_BASE_URL}/research/metrics`
+    const res = await fetchWithTimeout(
+      `${API_BASE_URL}/research/metrics`,
+      {},
+      8000
     );
 
     if (!res.ok)
